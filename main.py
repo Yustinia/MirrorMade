@@ -68,7 +68,22 @@ def choice_with_latency(choice):
     raise ValueError(f"{choice} is not an option for latency")
 
 
+def display_opts() -> None:
+    disp = [
+        "Usage: Enter 3 digits",
+        "Audio: 1 — Audio Forward, 2 — No Audio Forward",
+        "Quality: 1 — HQ, 2 — MD, 3 — LQ",
+        "Latency: 1 — 1s, 2 — No latency",
+    ]
+
+    print()
+    for line in disp:
+        print(line)
+    print()
+
+
 def main():
+    display_opts()
     try:
         user_opts = input("Enter options: ")
 
