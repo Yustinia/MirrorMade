@@ -86,8 +86,10 @@ def main():
     audioOpt = vidOpt = latencyOpt = 0
 
     while True:
+        print()
         for line in ScrcpyChoice.display():
             print(line)
+        print()
 
         giveOpts = input("> ").strip()
         giveOpts = [int(option) for option in giveOpts]
@@ -112,10 +114,13 @@ def main():
         if captureErrors:
             for error in captureErrors:
                 print("Error:", error)
-                continue
+            continue
 
-        scrcpy = SrcpyWrapper(audioOpt, vidOpt, latencyOpt)
-        scrcpy._scrcpyRunner()
+        try:
+            scrcpy = SrcpyWrapper(audioOpt, vidOpt, latencyOpt)
+            scrcpy._scrcpyRunner()
+        except RuntimeError as e:
+            print("Error:", e)
 
         break
 
