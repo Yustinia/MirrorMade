@@ -3,119 +3,121 @@ import shutil
 
 
 class SrcpyWrapper:
-    def __init__(self, audio: int, quality: int, latency: int) -> None:
+    def __init__(self, audioQuality: int, videoQuality: int, latency: int) -> None:
         if not shutil.which("scrcpy") or not shutil.which("adb"):
-            raise RuntimeError("scrcpy and adb not found in PATH")
+            raise RuntimeError("SCRCPY or ADB not found in PATH")
 
-        self.base_opts = ["scrcpy"]
+        self.baseOpts = ["scrcpy"]
 
-        audio_opt = self.with_audio(audio)
-        if audio_opt:
-            self.base_opts.extend(audio_opt)
+        ifWithAudio = self.ifWithAudio(audioQuality)
+        if ifWithAudio:
+            self.baseOpts.extend(ifWithAudio)
 
-        quality_opt = self.quality(quality)
-        if quality_opt:
-            self.base_opts.extend(quality_opt)
+        defVideoQuality = self.defVideoQuality(videoQuality)
+        if defVideoQuality:
+            self.baseOpts.extend(defVideoQuality)
 
-        latency_opt = self.with_latency(latency)
-        if latency_opt:
-            self.base_opts.extend(latency_opt)
+        delayLatency = self.delayLatency(latency)
+        if delayLatency:
+            self.baseOpts.extend(delayLatency)
 
-    def with_audio(self, sel_opt: int):
-        audio_opts = {
+    def ifWithAudio(self, selOption):
+        audioOpts = {
             1: [],  # audio forward
-            2: ["--no-audio"],  # disable audio forward
+            2: ["--no-audio"],  # no audio forward
         }
 
-        return audio_opts[sel_opt]
+        return audioOpts[selOption]
 
-    def quality(self, sel_opt: int):
-        quality_opts = {
+    def defVideoQuality(self, selOption):
+        vidQualityOpts = {
             1: ["--video-bit-rate=8M", "--audio-bit-rate=128K"],  # hq
             2: ["--video-bit-rate=4M", "--audio-bit-rate=96K"],  # mq
             3: ["--video-bit-rate=2M", "--audio-bit-rate=64K"],  # lq
         }
 
-        return quality_opts[sel_opt]
+        return vidQualityOpts[selOption]
 
-    def with_latency(self, sel_opt: int):
-        latency_opt = {
+    def delayLatency(self, selOption):
+        latencyOpts = {
             1: ["--video-buffer=1000", "--audio-buffer=1000"],
             2: ["--video-buffer=0", "--audio-buffer=0"],
         }
 
-        return latency_opt[sel_opt]
+        return latencyOpts[selOption]
 
-    def runner(self):
-        subprocess.run(self.base_opts)
-
-
-def choice_with_audio(choice):
-    if choice in [1, 2]:
-        return choice
-    raise ValueError(f"{choice} is not an option for audio")
+    def _scrcpyRunner(self):
+        subprocess.run(self.baseOpts)
 
 
-def choice_quality(choice):
-    if choice in [1, 2, 3]:
-        return choice
-    raise ValueError(f"{choice} is not an option for quality")
+class ScrcpyChoice:
+    @staticmethod
+    def display():
+        dispOpts = [
+            "Welcome to the scrcpy wrapper",
+            "1/2 - No Audio Forward / Audio Forward",
+            "1/2/3 - High / Medium / Low",
+            "1/2 - 1s Latency / No Latency",
+            "Ex: 111",
+        ]
 
+        return dispOpts
 
-def choice_with_latency(choice):
-    if choice in [1, 2]:
-        return choice
-    raise ValueError(f"{choice} is not an option for latency")
+    @staticmethod
+    def choiceWithAudio(choice):
+        if choice in [1, 2]:
+            return choice
+        raise ValueError(f"{choice} is not an option for AUDIO")
 
+    @staticmethod
+    def choiceVidQuality(choice):
+        if choice in [1, 2, 3]:
+            return choice
+        raise ValueError(f"{choice} is not an option for VIDEO QUALITY")
 
-def display_opts() -> None:
-    disp = [
-        "Usage: Enter 3 digits",
-        "Audio: 1 — Audio Forward, 2 — No Audio Forward",
-        "Quality: 1 — HQ, 2 — MD, 3 — LQ",
-        "Latency: 1 — 1s, 2 — No latency",
-    ]
-
-    print()
-    for line in disp:
-        print(line)
-    print()
+    @staticmethod
+    def choiceWithLatency(choice):
+        if choice in [1, 2]:
+            return choice
+        raise ValueError(f"{choice} is not an option for LATENCY")
 
 
 def main():
-    display_opts()
-    try:
-        user_opts = input("Enter options: ")
+    audioOpt = vidOpt = latencyOpt = 0
 
-        if len(user_opts) != 3 or not user_opts.isdigit():
-            raise ValueError("Must enter 3 digits")
+    while True:
+        for line in ScrcpyChoice.display():
+            print(line)
 
-        capture_errors = []
-        aopt = bopt = copt = 0
+        giveOpts = input("> ").strip()
+        giveOpts = [int(option) for option in giveOpts]
 
-        try:
-            aopt = choice_with_audio(int(user_opts[0]))
-        except ValueError as e:
-            capture_errors.append(str(e))
+        captureErrors = []
 
         try:
-            bopt = choice_quality(int(user_opts[1]))
+            audioOpt = ScrcpyChoice.choiceWithAudio(giveOpts[0])
         except ValueError as e:
-            capture_errors.append(str(e))
+            captureErrors.append(str(e))
 
         try:
-            copt = choice_with_latency(int(user_opts[2]))
+            vidOpt = ScrcpyChoice.choiceVidQuality(giveOpts[1])
         except ValueError as e:
-            capture_errors.append(str(e))
+            captureErrors.append(str(e))
 
-        if capture_errors:
-            raise ValueError("\n".join(capture_errors))
+        try:
+            latencyOpt = ScrcpyChoice.choiceWithLatency(giveOpts[2])
+        except ValueError as e:
+            captureErrors.append(str(e))
 
-        scrcpy = SrcpyWrapper(aopt, bopt, copt)
-        scrcpy.runner()
+        if captureErrors:
+            for error in captureErrors:
+                print("Error:", error)
+                continue
 
-    except ValueError as e:
-        print(f"Error: {e}")
+        scrcpy = SrcpyWrapper(audioOpt, vidOpt, latencyOpt)
+        scrcpy._scrcpyRunner()
+
+        break
 
 
 main()
