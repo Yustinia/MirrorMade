@@ -55,9 +55,9 @@ class ScrcpyChoice:
     def display():
         dispOpts = [
             "Welcome to the scrcpy wrapper",
-            "1/2 - No Audio Forward / Audio Forward",
-            "1/2/3 - High / Medium / Low",
-            "1/2 - 1s Latency / No Latency",
+            "1/2    -   No Audio Forward / Audio Forward",
+            "1/2/3  -   High / Medium / Low",
+            "1/2    -   1s Latency / No Latency",
             "Ex: 111",
         ]
 
